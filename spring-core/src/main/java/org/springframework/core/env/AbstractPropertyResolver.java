@@ -40,30 +40,30 @@ import org.springframework.util.SystemPropertyUtils;
  * @since 3.1
  */
 public abstract class AbstractPropertyResolver implements ConfigurablePropertyResolver {
-
+	
 	protected final Log logger = LogFactory.getLog(getClass());
-
+	
 	@Nullable
 	private volatile ConfigurableConversionService conversionService;
-
+	
 	@Nullable
 	private PropertyPlaceholderHelper nonStrictHelper;
-
+	
 	@Nullable
 	private PropertyPlaceholderHelper strictHelper;
-
+	
 	private boolean ignoreUnresolvableNestedPlaceholders = false;
-
+	
 	private String placeholderPrefix = SystemPropertyUtils.PLACEHOLDER_PREFIX;
-
+	
 	private String placeholderSuffix = SystemPropertyUtils.PLACEHOLDER_SUFFIX;
-
+	
 	@Nullable
 	private String valueSeparator = SystemPropertyUtils.VALUE_SEPARATOR;
-
+	
 	private final Set<String> requiredProperties = new LinkedHashSet<>();
-
-
+	
+	
 	@Override
 	public ConfigurableConversionService getConversionService() {
 		// Need to provide an independent DefaultConversionService, not the
@@ -80,16 +80,17 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
 		}
 		return cs;
 	}
-
+	
 	@Override
 	public void setConversionService(ConfigurableConversionService conversionService) {
 		Assert.notNull(conversionService, "ConversionService must not be null");
 		this.conversionService = conversionService;
 	}
-
+	
 	/**
 	 * Set the prefix that placeholders replaced by this resolver must begin with.
 	 * <p>The default is "${".
+	 *
 	 * @see org.springframework.util.SystemPropertyUtils#PLACEHOLDER_PREFIX
 	 */
 	@Override
@@ -97,10 +98,11 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
 		Assert.notNull(placeholderPrefix, "'placeholderPrefix' must not be null");
 		this.placeholderPrefix = placeholderPrefix;
 	}
-
+	
 	/**
 	 * Set the suffix that placeholders replaced by this resolver must end with.
 	 * <p>The default is "}".
+	 *
 	 * @see org.springframework.util.SystemPropertyUtils#PLACEHOLDER_SUFFIX
 	 */
 	@Override
@@ -108,19 +110,20 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
 		Assert.notNull(placeholderSuffix, "'placeholderSuffix' must not be null");
 		this.placeholderSuffix = placeholderSuffix;
 	}
-
+	
 	/**
 	 * Specify the separating character between the placeholders replaced by this
 	 * resolver and their associated default value, or {@code null} if no such
 	 * special character should be processed as a value separator.
 	 * <p>The default is ":".
+	 *
 	 * @see org.springframework.util.SystemPropertyUtils#VALUE_SEPARATOR
 	 */
 	@Override
 	public void setValueSeparator(@Nullable String valueSeparator) {
 		this.valueSeparator = valueSeparator;
 	}
-
+	
 	/**
 	 * Set whether to throw an exception when encountering an unresolvable placeholder
 	 * nested within the value of a given property. A {@code false} value indicates strict
@@ -128,18 +131,19 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
 	 * that unresolvable nested placeholders should be passed through in their unresolved
 	 * ${...} form.
 	 * <p>The default is {@code false}.
+	 *
 	 * @since 3.2
 	 */
 	@Override
 	public void setIgnoreUnresolvableNestedPlaceholders(boolean ignoreUnresolvableNestedPlaceholders) {
 		this.ignoreUnresolvableNestedPlaceholders = ignoreUnresolvableNestedPlaceholders;
 	}
-
+	
 	@Override
 	public void setRequiredProperties(String... requiredProperties) {
 		Collections.addAll(this.requiredProperties, requiredProperties);
 	}
-
+	
 	@Override
 	public void validateRequiredProperties() {
 		MissingRequiredPropertiesException ex = new MissingRequiredPropertiesException();
@@ -152,30 +156,30 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
 			throw ex;
 		}
 	}
-
+	
 	@Override
 	public boolean containsProperty(String key) {
 		return (getProperty(key) != null);
 	}
-
+	
 	@Override
 	@Nullable
 	public String getProperty(String key) {
 		return getProperty(key, String.class);
 	}
-
+	
 	@Override
 	public String getProperty(String key, String defaultValue) {
 		String value = getProperty(key);
 		return (value != null ? value : defaultValue);
 	}
-
+	
 	@Override
 	public <T> T getProperty(String key, Class<T> targetType, T defaultValue) {
 		T value = getProperty(key, targetType);
 		return (value != null ? value : defaultValue);
 	}
-
+	
 	@Override
 	public String getRequiredProperty(String key) throws IllegalStateException {
 		String value = getProperty(key);
@@ -184,7 +188,7 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
 		}
 		return value;
 	}
-
+	
 	@Override
 	public <T> T getRequiredProperty(String key, Class<T> valueType) throws IllegalStateException {
 		T value = getProperty(key, valueType);
@@ -193,7 +197,7 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
 		}
 		return value;
 	}
-
+	
 	@Override
 	public String resolvePlaceholders(String text) {
 		if (this.nonStrictHelper == null) {
@@ -201,15 +205,17 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
 		}
 		return doResolvePlaceholders(text, this.nonStrictHelper);
 	}
-
+	
 	@Override
 	public String resolveRequiredPlaceholders(String text) throws IllegalArgumentException {
 		if (this.strictHelper == null) {
+			// 此方法就是获取一个对象 对象中包含特殊的字符例如：${ } 等
 			this.strictHelper = createPlaceholderHelper(false);
 		}
+		// 此时text文本其实就是我们的配置文件的名称
 		return doResolvePlaceholders(text, this.strictHelper);
 	}
-
+	
 	/**
 	 * Resolve placeholders within the given string, deferring to the value of
 	 * {@link #setIgnoreUnresolvableNestedPlaceholders} to determine whether any
@@ -219,8 +225,9 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
 	 * {@link #resolveRequiredPlaceholders} do <i>not</i> delegate
 	 * to this method but rather perform their own handling of unresolvable
 	 * placeholders, as specified by each of those methods.
-	 * @since 3.2
+	 *
 	 * @see #setIgnoreUnresolvableNestedPlaceholders
+	 * @since 3.2
 	 */
 	protected String resolveNestedPlaceholders(String value) {
 		if (value.isEmpty()) {
@@ -229,19 +236,21 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
 		return (this.ignoreUnresolvableNestedPlaceholders ?
 				resolvePlaceholders(value) : resolveRequiredPlaceholders(value));
 	}
-
+	
 	private PropertyPlaceholderHelper createPlaceholderHelper(boolean ignoreUnresolvablePlaceholders) {
 		return new PropertyPlaceholderHelper(this.placeholderPrefix, this.placeholderSuffix,
 				this.valueSeparator, ignoreUnresolvablePlaceholders);
 	}
-
+	
 	private String doResolvePlaceholders(String text, PropertyPlaceholderHelper helper) {
+		// 开始调用替换方法
 		return helper.replacePlaceholders(text, this::getPropertyAsRawString);
 	}
-
+	
 	/**
 	 * Convert the given value to the specified target type, if necessary.
-	 * @param value the original property value
+	 *
+	 * @param value      the original property value
 	 * @param targetType the specified target type for property retrieval
 	 * @return the converted value, or the original value if no conversion
 	 * is necessary
@@ -264,15 +273,16 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
 		}
 		return conversionServiceToUse.convert(value, targetType);
 	}
-
-
+	
+	
 	/**
 	 * Retrieve the specified property as a raw String,
 	 * i.e. without resolution of nested placeholders.
+	 *
 	 * @param key the property name to resolve
 	 * @return the property value or {@code null} if none found
 	 */
 	@Nullable
 	protected abstract String getPropertyAsRawString(String key);
-
+	
 }
