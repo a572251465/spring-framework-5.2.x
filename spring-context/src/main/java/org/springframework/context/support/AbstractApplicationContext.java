@@ -171,6 +171,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	/**
 	 * Unique id for this context, if any.
 	 */
+	// 表示随机生成的容器id
 	private String id = ObjectUtils.identityToString(this);
 	
 	/**
@@ -193,6 +194,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	/**
 	 * BeanFactoryPostProcessors to apply on refresh.
 	 */
+	// 保存beanFactoryPostProcessor
 	private final List<BeanFactoryPostProcessor> beanFactoryPostProcessors = new ArrayList<>();
 	
 	/**
@@ -213,6 +215,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	/**
 	 * Synchronization monitor for the "refresh" and "destroy".
 	 */
+	// 定义的同步锁
 	private final Object startupShutdownMonitor = new Object();
 	
 	/**
@@ -563,6 +566,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		return this.applicationListeners;
 	}
 	
+	// 此方法是处理的核心方法
 	@Override
 	public void refresh() throws BeansException, IllegalStateException {
 		// 加锁的目的 是为了防止多线程的并发处理
@@ -573,6 +577,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			
 			// Tell the subclass to refresh the internal bean factory.
 			// 刷新内部的BeanFactory  其实就是获取内部的BeanFactory
+			/**
+			 * 在此方法中会完成 beanDefinition的定义，注册等操作
+			 */
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 			
 			// bean 工厂的前置处理。 为BeanFactory设置一些标识，比如类加载器，事件广播器等
@@ -637,6 +644,14 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * active flag as well as performing any initialization of property sources.
 	 */
 	protected void prepareRefresh() {
+		/**
+		 * 1. 设置系统启动时间
+		 * 2. 取消系统的关闭状态
+		 * 3. 设置系统的激活状态
+		 * 4. 初期化属性
+		 * 5. 拿到系统变量 以及检验必须的属性
+		 * 6. 存储预先刷新的ApplicationListeners
+		 */
 		// Switch to active.
 		// 启动时间
 		this.startupDate = System.currentTimeMillis();
@@ -654,7 +669,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		}
 		
 		// Initialize any placeholder property sources in the context environment.
-		// 啥都没做 等待子类的重写
+		// 啥都没做 等待子类的重写 此方法是一个扩展点
+		/**
+		 * 比如程序执行的时候 系统变量中必须携带参数  -Dspring.profiles.active=dev
+		 * 可以重写此方法  后续的validateRequiredProperties 会进行检验。
+		 */
 		initPropertySources();
 		
 		// 拿到系统中的变量
@@ -714,9 +733,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		
 		// Configure the bean factory with context callbacks.
 		// 将ApplicationContextAwareProcessor 注册到bean工厂中
+		// ApplicationContextAwareProcessor 用于处理Aware接口 Aware部分接口是通过此类进行处理的
 		beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
 		
-		// 忽略部分Aware
+		// 忽略部分Aware 因为者部分操作会在后置处理器中进行执行
 		beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
 		beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);
 		beanFactory.ignoreDependencyInterface(ResourceLoaderAware.class);
@@ -726,6 +746,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		
 		// BeanFactory interface not registered as resolvable type in a plain factory.
 		// MessageSource registered (and found for autowiring) as a bean.
+		// 如果存在多个类型的话  要求必须指定一个类型
 		beanFactory.registerResolvableDependency(BeanFactory.class, beanFactory);
 		beanFactory.registerResolvableDependency(ResourceLoader.class, this);
 		beanFactory.registerResolvableDependency(ApplicationEventPublisher.class, this);

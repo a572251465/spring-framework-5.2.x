@@ -87,6 +87,7 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 
 		// Determine ResourceLoader to use.
 		if (this.registry instanceof ResourceLoader) {
+			// 处理资源的loader
 			this.resourceLoader = (ResourceLoader) this.registry;
 		}
 		else {
@@ -95,6 +96,7 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 
 		// Inherit Environment if possible
 		if (this.registry instanceof EnvironmentCapable) {
+			// 获取环境参数的
 			this.environment = ((EnvironmentCapable) this.registry).getEnvironment();
 		}
 		else {
@@ -220,6 +222,7 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 		if (resourceLoader instanceof ResourcePatternResolver) {
 			// Resource pattern matching available.
 			try {
+				// 将对应字符串location 转换为 Resource 数组
 				Resource[] resources = ((ResourcePatternResolver) resourceLoader).getResources(location);
 				int count = loadBeanDefinitions(resources);
 				if (actualResources != null) {
@@ -237,6 +240,7 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 		}
 		else {
 			// Can only load single resources by absolute URL.
+			// 将单个location 转换为 Resource 对象
 			Resource resource = resourceLoader.getResource(location);
 			int count = loadBeanDefinitions(resource);
 			if (actualResources != null) {
@@ -253,6 +257,7 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 	public int loadBeanDefinitions(String... locations) throws BeanDefinitionStoreException {
 		Assert.notNull(locations, "Location array must not be null");
 		int count = 0;
+		// 进行挨个循环遍历，因为有可能会存在多个配置文件
 		for (String location : locations) {
 			count += loadBeanDefinitions(location);
 		}

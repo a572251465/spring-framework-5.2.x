@@ -412,11 +412,14 @@ public class BeanDefinitionParserDelegate {
 	 */
 	@Nullable
 	public BeanDefinitionHolder parseBeanDefinitionElement(Element ele, @Nullable BeanDefinition containingBean) {
+		// 获取id/ name 属性
 		String id = ele.getAttribute(ID_ATTRIBUTE);
 		String nameAttr = ele.getAttribute(NAME_ATTRIBUTE);
 
+		// 定义别名的集合
 		List<String> aliases = new ArrayList<>();
 		if (StringUtils.hasLength(nameAttr)) {
+			// 将name 通过指定字符分割后 分割为字符串数组
 			String[] nameArr = StringUtils.tokenizeToStringArray(nameAttr, MULTI_VALUE_ATTRIBUTE_DELIMITERS);
 			aliases.addAll(Arrays.asList(nameArr));
 		}
@@ -430,6 +433,7 @@ public class BeanDefinitionParserDelegate {
 			}
 		}
 
+		// 此方法check beanName 唯一性
 		if (containingBean == null) {
 			checkNameUniqueness(beanName, aliases, ele);
 		}
@@ -503,7 +507,9 @@ public class BeanDefinitionParserDelegate {
 		this.parseState.push(new BeanEntry(beanName));
 
 		String className = null;
+		// 是否包含class 属性
 		if (ele.hasAttribute(CLASS_ATTRIBUTE)) {
+			// 将class 属性的内容获取到
 			className = ele.getAttribute(CLASS_ATTRIBUTE).trim();
 		}
 		String parent = null;
@@ -512,8 +518,10 @@ public class BeanDefinitionParserDelegate {
 		}
 
 		try {
+			// 创建beanDefinition
 			AbstractBeanDefinition bd = createBeanDefinition(className, parent);
 
+			// 以下的属性 为了解析标签上其他属性
 			parseBeanDefinitionAttributes(ele, beanName, containingBean, bd);
 			bd.setDescription(DomUtils.getChildElementValueByTagName(ele, DESCRIPTION_ELEMENT));
 
@@ -1367,7 +1375,9 @@ public class BeanDefinitionParserDelegate {
 	 * @return the resulting bean definition
 	 */
 	@Nullable
+	// 此方法是解析自定义标签的入口
 	public BeanDefinition parseCustomElement(Element ele) {
+		// 开始解析自定义标签
 		return parseCustomElement(ele, null);
 	}
 
@@ -1379,15 +1389,19 @@ public class BeanDefinitionParserDelegate {
 	 */
 	@Nullable
 	public BeanDefinition parseCustomElement(Element ele, @Nullable BeanDefinition containingBd) {
+		// 获取到命名空间url
 		String namespaceUri = getNamespaceURI(ele);
 		if (namespaceUri == null) {
 			return null;
 		}
+		// 例如此时拿到值是 http://www.springframework.org/schema/context  通过地址拿到对应的实例类
+		// http\://www.springframework.org/schema/context=org.springframework.context.config.ContextNamespaceHandler
 		NamespaceHandler handler = this.readerContext.getNamespaceHandlerResolver().resolve(namespaceUri);
 		if (handler == null) {
 			error("Unable to locate Spring NamespaceHandler for XML schema namespace [" + namespaceUri + "]", ele);
 			return null;
 		}
+		// 开始解析自定义字段
 		return handler.parse(ele, new ParserContext(this.readerContext, this, containingBd));
 	}
 

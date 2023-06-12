@@ -79,7 +79,9 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 
 	@Override
 	@Nullable
+	// 开始解析字段
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
+		// 拿到属性【base-package】 的值
 		String basePackage = element.getAttribute(BASE_PACKAGE_ATTRIBUTE);
 		basePackage = parserContext.getReaderContext().getEnvironment().resolvePlaceholders(basePackage);
 		String[] basePackages = StringUtils.tokenizeToStringArray(basePackage,
