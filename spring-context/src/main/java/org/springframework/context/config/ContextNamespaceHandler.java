@@ -30,17 +30,20 @@ import org.springframework.context.annotation.ComponentScanBeanDefinitionParser;
  */
 // 此类是解析context 标签的
 public class ContextNamespaceHandler extends NamespaceHandlerSupport {
-
+	
 	@Override
 	public void init() {
+		// 针对每个属性 都有对应的类去解析
 		registerBeanDefinitionParser("property-placeholder", new PropertyPlaceholderBeanDefinitionParser());
 		registerBeanDefinitionParser("property-override", new PropertyOverrideBeanDefinitionParser());
 		registerBeanDefinitionParser("annotation-config", new AnnotationConfigBeanDefinitionParser());
+		
+		// 此类是开始解析扫描
 		registerBeanDefinitionParser("component-scan", new ComponentScanBeanDefinitionParser());
 		registerBeanDefinitionParser("load-time-weaver", new LoadTimeWeaverBeanDefinitionParser());
 		registerBeanDefinitionParser("spring-configured", new SpringConfiguredBeanDefinitionParser());
 		registerBeanDefinitionParser("mbean-export", new MBeanExportBeanDefinitionParser());
 		registerBeanDefinitionParser("mbean-server", new MBeanServerBeanDefinitionParser());
 	}
-
+	
 }

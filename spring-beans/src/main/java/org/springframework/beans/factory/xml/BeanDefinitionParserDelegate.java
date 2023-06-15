@@ -1396,6 +1396,7 @@ public class BeanDefinitionParserDelegate {
 		}
 		// 例如此时拿到值是 http://www.springframework.org/schema/context  通过地址拿到对应的实例类
 		// http\://www.springframework.org/schema/context=org.springframework.context.config.ContextNamespaceHandler
+		// 此方法就是拿到标签对应的处理器
 		NamespaceHandler handler = this.readerContext.getNamespaceHandlerResolver().resolve(namespaceUri);
 		if (handler == null) {
 			error("Unable to locate Spring NamespaceHandler for XML schema namespace [" + namespaceUri + "]", ele);

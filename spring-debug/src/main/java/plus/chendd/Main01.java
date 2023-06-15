@@ -1,7 +1,7 @@
 package plus.chendd;
 
-import plus.chendd.entity.Person;
-import plus.chendd.entity.User;
+
+import plus.chendd.test01.TestPropertySource;
 
 public class Main01 {
 	public static void main(String[] args) {
@@ -9,9 +9,7 @@ public class Main01 {
 			System.out.println(arg);
 		}
 		MyClassPathXmlApplicationContext context = new MyClassPathXmlApplicationContext("ApplicationContext-${dev}.xml");
-		User bean = context.getBean(User.class);
-		
-		Person bean1 = context.getBean(Person.class);
-		System.out.println(bean1);
+		TestPropertySource bean = context.getBean(TestPropertySource.class);
+		System.out.println(bean);
 	}
 }

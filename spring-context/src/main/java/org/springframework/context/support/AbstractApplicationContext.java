@@ -587,6 +587,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			
 			try {
 				// 1. 设置ServletContextAwareProcessor 相关处理
+				// 可以通过覆盖此方法 达到重写方法的目的   但是在Spring中没有任何用处
 				postProcessBeanFactory(beanFactory);
 				
 				// 执行BeanFactoryPostProcessor 核心。想修改BeanDefinition 就在此处
@@ -765,6 +766,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		
 		// Register default environment beans.
 		// 注册默认的环境 beans
+		// 在beanFactory 中定义默认的环境
 		if (!beanFactory.containsLocalBean(ENVIRONMENT_BEAN_NAME)) {
 			beanFactory.registerSingleton(ENVIRONMENT_BEAN_NAME, getEnvironment());
 		}
