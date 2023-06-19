@@ -9,7 +9,5 @@ public class Main01 {
 			System.out.println(arg);
 		}
 		MyClassPathXmlApplicationContext context = new MyClassPathXmlApplicationContext("ApplicationContext-${dev}.xml");
-		TestPropertySource bean = context.getBean(TestPropertySource.class);
-		System.out.println(bean);
 	}
 }

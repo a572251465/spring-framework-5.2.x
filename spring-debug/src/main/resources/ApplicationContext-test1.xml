@@ -8,6 +8,5 @@
 	   http://www.springframework.org/schema/context
 	   http://www.springframework.org/schema/context/spring-context.xsd
 ">
-	<context:component-scan base-package="plus.chendd.test04"></context:component-scan>
-	<bean id="testBeanPostProcessor" class="plus.chendd.test04.TestBeanPostProcessor"></bean>
+	<context:component-scan base-package="plus.chendd.test03"></context:component-scan>
 </beans>

@@ -29,6 +29,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.ErrorHandler;
 
 /**
+ * {@link ApplicationEventMulticaster} 接口的简单实现
  * Simple implementation of the {@link ApplicationEventMulticaster} interface.
  *
  * <p>Multicasts all events to all registered listeners, leaving it up to
@@ -122,6 +123,7 @@ public class SimpleApplicationEventMulticaster extends AbstractApplicationEventM
 	}
 
 
+	// 此方法是触发事件的方法
 	@Override
 	public void multicastEvent(ApplicationEvent event) {
 		multicastEvent(event, resolveDefaultEventType(event));
@@ -131,11 +133,13 @@ public class SimpleApplicationEventMulticaster extends AbstractApplicationEventM
 	public void multicastEvent(final ApplicationEvent event, @Nullable ResolvableType eventType) {
 		ResolvableType type = (eventType != null ? eventType : resolveDefaultEventType(event));
 		Executor executor = getTaskExecutor();
+		// 拿到 并且遍历所有的监听器
 		for (ApplicationListener<?> listener : getApplicationListeners(event, type)) {
 			if (executor != null) {
 				executor.execute(() -> invokeListener(listener, event));
 			}
 			else {
+				// 此方法是执行监听器
 				invokeListener(listener, event);
 			}
 		}
@@ -146,6 +150,7 @@ public class SimpleApplicationEventMulticaster extends AbstractApplicationEventM
 	}
 
 	/**
+	 * 使用给定事件调用给定侦听器。
 	 * Invoke the given listener with the given event.
 	 * @param listener the ApplicationListener to invoke
 	 * @param event the current event to propagate
@@ -155,6 +160,7 @@ public class SimpleApplicationEventMulticaster extends AbstractApplicationEventM
 		ErrorHandler errorHandler = getErrorHandler();
 		if (errorHandler != null) {
 			try {
+				// 执行监听器的逻辑
 				doInvokeListener(listener, event);
 			}
 			catch (Throwable err) {
@@ -169,6 +175,7 @@ public class SimpleApplicationEventMulticaster extends AbstractApplicationEventM
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	private void doInvokeListener(ApplicationListener listener, ApplicationEvent event) {
 		try {
+			// 调用监听器 特有的方法
 			listener.onApplicationEvent(event);
 		}
 		catch (ClassCastException ex) {

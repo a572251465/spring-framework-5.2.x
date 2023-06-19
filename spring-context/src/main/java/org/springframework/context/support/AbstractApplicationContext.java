@@ -593,7 +593,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				// 执行BeanFactoryPostProcessor 核心。想修改BeanDefinition 就在此处
 				invokeBeanFactoryPostProcessors(beanFactory);
 				
-				// 注册BeanPostProcessor 后置处理器
+				// 注册BeanPostProcessor 后置处理器  注册各种beanPostProcessor
 				registerBeanPostProcessors(beanFactory);
 				
 				// Initialize message source for this context.
@@ -609,7 +609,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				onRefresh();
 				
 				// Check for listener beans and register them.
-				// 注册监听器
+				// 注册监听器  跟方法【initApplicationEventMulticaster】 相对应。
 				registerListeners();
 				
 				// Instantiate all remaining (non-lazy-init) singletons.
@@ -823,7 +823,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void initMessageSource() {
 		ConfigurableListableBeanFactory beanFactory = getBeanFactory();
+		// 判断bean 工厂中是否包含【messageSource】
 		if (beanFactory.containsLocalBean(MESSAGE_SOURCE_BEAN_NAME)) {
+			// 从bean 工厂中拿到messageSource
 			this.messageSource = beanFactory.getBean(MESSAGE_SOURCE_BEAN_NAME, MessageSource.class);
 			// Make MessageSource aware of parent MessageSource.
 			if (this.parent != null && this.messageSource instanceof HierarchicalMessageSource) {
@@ -839,9 +841,12 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			}
 		} else {
 			// Use empty MessageSource to be able to accept getMessage calls.
+			// 实例化默认的MessageSource
 			DelegatingMessageSource dms = new DelegatingMessageSource();
+			// 设置消息源
 			dms.setParentMessageSource(getInternalParentMessageSource());
 			this.messageSource = dms;
+			// 设置注册标记
 			beanFactory.registerSingleton(MESSAGE_SOURCE_BEAN_NAME, this.messageSource);
 			if (logger.isTraceEnabled()) {
 				logger.trace("No '" + MESSAGE_SOURCE_BEAN_NAME + "' bean, using [" + this.messageSource + "]");
@@ -864,7 +869,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				logger.trace("Using ApplicationEventMulticaster [" + this.applicationEventMulticaster + "]");
 			}
 		} else {
+			// 实例化一个多播器
 			this.applicationEventMulticaster = new SimpleApplicationEventMulticaster(beanFactory);
+			// 将实例化的多播器 注册到Singleton中
 			beanFactory.registerSingleton(APPLICATION_EVENT_MULTICASTER_BEAN_NAME, this.applicationEventMulticaster);
 			if (logger.isTraceEnabled()) {
 				logger.trace("No '" + APPLICATION_EVENT_MULTICASTER_BEAN_NAME + "' bean, using " +
@@ -917,12 +924,14 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void registerListeners() {
 		// Register statically specified listeners first.
+		// 将外部手动添加的监听器注册到多播器中
 		for (ApplicationListener<?> listener : getApplicationListeners()) {
 			getApplicationEventMulticaster().addApplicationListener(listener);
 		}
 		
 		// Do not initialize FactoryBeans here: We need to leave all regular beans
 		// uninitialized to let post-processors apply to them!
+		// 实现接口ApplicationListener 的事件 添加到多播器中
 		String[] listenerBeanNames = getBeanNamesForType(ApplicationListener.class, true, false);
 		for (String listenerBeanName : listenerBeanNames) {
 			getApplicationEventMulticaster().addApplicationListenerBean(listenerBeanName);
@@ -933,6 +942,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		this.earlyApplicationEvents = null;
 		if (!CollectionUtils.isEmpty(earlyEventsToProcess)) {
 			for (ApplicationEvent earlyEvent : earlyEventsToProcess) {
+				// 进行发布
 				getApplicationEventMulticaster().multicastEvent(earlyEvent);
 			}
 		}

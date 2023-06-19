@@ -19,6 +19,7 @@ package org.springframework.context;
 import java.util.EventListener;
 
 /**
+ * 监听器 必须实现此接口
  * Interface to be implemented by application event listeners.
  *
  * <p>Based on the standard {@code java.util.EventListener} interface

@@ -205,6 +205,12 @@ final class PostProcessorRegistrationDelegate {
 		beanFactory.clearMetadataCache();
 	}
 	
+	/**
+	 * 根据不同的排序注解，将beanDefinition添加到集合中，从集合中添加到beanDefinition
+	 *
+	 * @param beanFactory
+	 * @param applicationContext
+	 */
 	public static void registerBeanPostProcessors(
 			ConfigurableListableBeanFactory beanFactory, AbstractApplicationContext applicationContext) {
 		
@@ -215,6 +221,7 @@ final class PostProcessorRegistrationDelegate {
 		// a bean is created during BeanPostProcessor instantiation, i.e. when
 		// a bean is not eligible for getting processed by all BeanPostProcessors.
 		int beanProcessorTargetCount = beanFactory.getBeanPostProcessorCount() + 1 + postProcessorNames.length;
+		// 添加执行checker 的beanPostProcessor
 		beanFactory.addBeanPostProcessor(new BeanPostProcessorChecker(beanFactory, beanProcessorTargetCount));
 		
 		// Separate between BeanPostProcessors that implement PriorityOrdered,
@@ -369,6 +376,7 @@ final class PostProcessorRegistrationDelegate {
 			return bean;
 		}
 		
+		// 判断是否是基础bean
 		private boolean isInfrastructureBean(@Nullable String beanName) {
 			if (beanName != null && this.beanFactory.containsBeanDefinition(beanName)) {
 				BeanDefinition bd = this.beanFactory.getBeanDefinition(beanName);

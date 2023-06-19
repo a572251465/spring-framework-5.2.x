@@ -314,6 +314,7 @@ class ConfigurationClassParser {
 		
 		// Process any @Import annotations
 		// 处理@import
+		// getImports 此方法就是通过递归的形式来处理注解@import 因为可能导入的类中 还有导入的类
 		processImports(configClass, sourceClass, getImports(sourceClass), filter, true);
 		
 		// Process any @ImportResource annotations
@@ -570,6 +571,7 @@ class ConfigurationClassParser {
 								Collection<SourceClass> importCandidates, Predicate<String> exclusionFilter,
 								boolean checkForCircularImports) {
 		
+		// 变量【importCandidates】 拿到导入的class 字节码
 		if (importCandidates.isEmpty()) {
 			return;
 		}
@@ -580,6 +582,7 @@ class ConfigurationClassParser {
 			this.importStack.push(configClass);
 			try {
 				for (SourceClass candidate : importCandidates) {
+					// 判断是否是ImportSelector
 					if (candidate.isAssignable(ImportSelector.class)) {
 						// Candidate class is an ImportSelector -> delegate to it to determine imports
 						Class<?> candidateClass = candidate.loadClass();
@@ -596,6 +599,8 @@ class ConfigurationClassParser {
 							Collection<SourceClass> importSourceClasses = asSourceClasses(importClassNames, exclusionFilter);
 							processImports(configClass, currentSourceClass, importSourceClasses, exclusionFilter, false);
 						}
+						
+						// 判断是否是ImportBeanDefinitionRegistrar
 					} else if (candidate.isAssignable(ImportBeanDefinitionRegistrar.class)) {
 						// Candidate class is an ImportBeanDefinitionRegistrar ->
 						// delegate to it to register additional bean definitions
@@ -609,6 +614,7 @@ class ConfigurationClassParser {
 						// process it as an @Configuration class
 						this.importStack.registerImport(
 								currentSourceClass.getMetadata(), candidate.getMetadata().getClassName());
+						// 此方法递归解析import class
 						processConfigurationClass(candidate.asConfigClass(configClass), exclusionFilter);
 					}
 				}
