@@ -954,6 +954,13 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void finishBeanFactoryInitialization(ConfigurableListableBeanFactory beanFactory) {
 		// Initialize conversion service for this context.
+		// 此代码是初始化 转换服务
+		// 此转换服务是 类型转换服务。 比如从integer => String 类型的转换
+		
+		// 总共有三个顶级 接口可以实现，来完成类型转换。
+		// 1. ConverterFactory
+		// 2. Converter
+			// 3. GenericConverter
 		if (beanFactory.containsBean(CONVERSION_SERVICE_BEAN_NAME) &&
 				beanFactory.isTypeMatch(CONVERSION_SERVICE_BEAN_NAME, ConversionService.class)) {
 			beanFactory.setConversionService(
@@ -963,11 +970,13 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		// Register a default embedded value resolver if no BeanFactoryPostProcessor
 		// (such as a PropertySourcesPlaceholderConfigurer bean) registered any before:
 		// at this point, primarily for resolution in annotation attribute values.
+		// 解析占位符
 		if (!beanFactory.hasEmbeddedValueResolver()) {
 			beanFactory.addEmbeddedValueResolver(strVal -> getEnvironment().resolvePlaceholders(strVal));
 		}
 		
 		// Initialize LoadTimeWeaverAware beans early to allow for registering their transformers early.
+		// 表示AOP 织入相关的逻辑
 		String[] weaverAwareNames = beanFactory.getBeanNamesForType(LoadTimeWeaverAware.class, false, false);
 		for (String weaverAwareName : weaverAwareNames) {
 			getBean(weaverAwareName);
@@ -982,6 +991,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.freezeConfiguration();
 		
 		// Instantiate all remaining (non-lazy-init) singletons.
+		// 实例化剩余所有的单例
 		beanFactory.preInstantiateSingletons();
 	}
 	
