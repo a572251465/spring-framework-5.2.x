@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	<bean id="genUser01" class="plus.chendd.factoryMethod.GenUser01" factory-method="getUser">
+		<constructor-arg value="chendd"/>
+	</bean>
+	
+	
+	<bean id="personInstanceFactory" class="plus.chendd.factoryMethod.GenUser02"></bean>
+	<bean id="genUser02" class="plus.chendd.factoryMethod.User" factory-bean="personInstanceFactory" factory-method="getUser">
+		<constructor-arg value="chendd"/>
+	</bean>
+</beans>

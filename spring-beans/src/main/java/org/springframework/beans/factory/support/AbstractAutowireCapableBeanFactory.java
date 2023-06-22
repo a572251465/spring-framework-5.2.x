@@ -521,6 +521,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			// 如果是代理模式 会代理出一个对象的话 直接返回
 			
 			// 如果没有代理的话 就是空值 直接返回就好了。
+			// 此方法表示实例化 之前解析
+			// 但凡接口【InstantiationAwareBeanPostProcessor】 被注册了，后续的任何实例都会机会返回一个代理对象
 			Object bean = resolveBeforeInstantiation(beanName, mbdToUse);
 			if (bean != null) {
 				return bean;
@@ -1131,11 +1133,14 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		Object bean = null;
 		if (!Boolean.FALSE.equals(mbd.beforeInstantiationResolved)) {
 			// Make sure bean class is actually resolved at this point.
+			// 一旦接口【InstantiationAwareBeanPostProcessor】被注册到postProcessor了 条件hasInstantiationAwareBeanPostProcessors() 变为true了
 			if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 				Class<?> targetType = determineTargetType(beanName, mbd);
 				if (targetType != null) {
-					// beanPostProcessor 前置处理器
+					// 此时执行前置处理器
 					bean = applyBeanPostProcessorsBeforeInstantiation(targetType, beanName);
+					// 如果前置处理器 不为null的话 才有可能执行后置处理器
+					// 所以有人想在后置处理器中返回新的实例（而前置处理器什么不写的），那是不可能的
 					if (bean != null) {
 						// 执行后置处理器
 						bean = applyBeanPostProcessorsAfterInitialization(bean, beanName);
@@ -1161,10 +1166,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	@Nullable
 	protected Object applyBeanPostProcessorsBeforeInstantiation(Class<?> beanClass, String beanName) {
+		// 首先获取实现BeanPostProcessor的实体
 		for (BeanPostProcessor bp : getBeanPostProcessors()) {
+			// 判断是否也实现的了方法【InstantiationAwareBeanPostProcessor】
 			if (bp instanceof InstantiationAwareBeanPostProcessor) {
 				InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
-				// beanPostProcessor 前置处理器
+				// 实例化之前做一些事情
 				Object result = ibp.postProcessBeforeInstantiation(beanClass, beanName);
 				if (result != null) {
 					return result;
@@ -1201,7 +1208,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			return obtainFromSupplier(instanceSupplier, beanName);
 		}
 		
+		// 此时判断是否存在工厂方法
 		if (mbd.getFactoryMethodName() != null) {
+			// 如果存在工厂方法的话 使用工厂方法来创建对象
 			return instantiateUsingFactoryMethod(beanName, mbd, args);
 		}
 		

@@ -5,8 +5,5 @@ public class Main01 {
 		for (String arg : args) {
 			System.out.println(arg);
 		}
-		MyClassPathXmlApplicationContext context = new MyClassPathXmlApplicationContext("ApplicationContext-${dev}.xml");
-		Object testFactoryBean = context.getBean("testFactoryBean");
-		System.out.println(testFactoryBean);
 	}
 }
