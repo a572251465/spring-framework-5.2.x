@@ -162,6 +162,7 @@ public class ConstructorArgumentValues {
 	@Nullable
 	public ValueHolder getIndexedArgumentValue(int index, @Nullable Class<?> requiredType, @Nullable String requiredName) {
 		Assert.isTrue(index >= 0, "Index must not be negative");
+		// 根据下标获取指定位置参数的值
 		ValueHolder valueHolder = this.indexedArgumentValues.get(index);
 		if (valueHolder != null &&
 				(valueHolder.getType() == null || (requiredType != null &&
@@ -355,6 +356,7 @@ public class ConstructorArgumentValues {
 			@Nullable String requiredName, @Nullable Set<ValueHolder> usedValueHolders) {
 
 		Assert.isTrue(index >= 0, "Index must not be negative");
+		// 通过下标获取到指定的值
 		ValueHolder valueHolder = getIndexedArgumentValue(index, requiredType, requiredName);
 		if (valueHolder == null) {
 			valueHolder = getGenericArgumentValue(requiredType, requiredName, usedValueHolders);
