@@ -1416,12 +1416,15 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	@SuppressWarnings("deprecation")  // for postProcessPropertyValues
 	protected void populateBean(String beanName, RootBeanDefinition mbd, @Nullable BeanWrapper bw) {
+		// 判断包装类是否为null
 		if (bw == null) {
+			// 而且满足存在属性的时候 直接报异常，反之是没有需要填充的
 			if (mbd.hasPropertyValues()) {
 				throw new BeanCreationException(
 						mbd.getResourceDescription(), beanName, "Cannot apply property values to null instance");
 			} else {
 				// Skip property population phase for null instance.
+				// 表示其实不需要进行填充的
 				return;
 			}
 		}
@@ -1429,6 +1432,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Give any InstantiationAwareBeanPostProcessors the opportunity to modify the
 		// state of the bean before properties are set. This can be used, for example,
 		// to support styles of field injection.
+		// 必须实现接口【InstantiationAwareBeanPostProcessor】 能有机会修改bean的状态
 		if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
 				if (bp instanceof InstantiationAwareBeanPostProcessor) {
@@ -1440,6 +1444,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 		}
 		
+		// 判断是否实现了name/ value 等属性的注入
 		PropertyValues pvs = (mbd.hasPropertyValues() ? mbd.getPropertyValues() : null);
 		
 		// 获取自动注入的模式
@@ -1449,10 +1454,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			// 此方法可以得到一个新的值
 			MutablePropertyValues newPvs = new MutablePropertyValues(pvs);
 			// Add property values based on autowire by name if applicable.
+			// 如果是基于ByName 执行此逻辑
 			if (resolvedAutowireMode == AUTOWIRE_BY_NAME) {
 				autowireByName(beanName, mbd, bw, newPvs);
 			}
-			// Add property values based on autowire by type if applicable.
+			// 如果是基于ByType 执行此逻辑
 			if (resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
 				autowireByType(beanName, mbd, bw, newPvs);
 			}
@@ -1509,10 +1515,13 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	// 通过by name 实现自动填充属性
 	protected void autowireByName(
 			String beanName, AbstractBeanDefinition mbd, BeanWrapper bw, MutablePropertyValues pvs) {
-		
+		// 此方法筛选可以填充的属性（此方法一般寻找的都是引用数据类型）
 		String[] propertyNames = unsatisfiedNonSimpleProperties(mbd, bw);
 		for (String propertyName : propertyNames) {
+			// 判断是否包含此bean
+			// 从一级缓存 或是 beanDefinitionMap中寻找 BeanDefinition
 			if (containsBean(propertyName)) {
+				// 开始循环遍历 通过beanName 获取bean
 				Object bean = getBean(propertyName);
 				pvs.add(propertyName, bean);
 				registerDependentBean(propertyName, beanName);
@@ -1594,8 +1603,15 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	protected String[] unsatisfiedNonSimpleProperties(AbstractBeanDefinition mbd, BeanWrapper bw) {
 		Set<String> result = new TreeSet<>();
 		PropertyValues pvs = mbd.getPropertyValues();
+		// 表示获取到了所有的属性
 		PropertyDescriptor[] pds = bw.getPropertyDescriptors();
+		// 遍历所有的属性
 		for (PropertyDescriptor pd : pds) {
+//			pd.getWriteMethod() != null  必须存在set方法
+//			!isExcludedFromDependencyCheck(pd) 不是排除/ 忽略的一些依赖
+//			!pvs.contains(pd.getName()) 不是property定义的属性
+//			!BeanUtils.isSimpleProperty(pd.getPropertyType()) // 不是简单数据类型
+			// 如果属性不是简单属性，且属性不是已经被填充过的，且属性不是基本数据类型
 			if (pd.getWriteMethod() != null && !isExcludedFromDependencyCheck(pd) && !pvs.contains(pd.getName()) &&
 					!BeanUtils.isSimpleProperty(pd.getPropertyType())) {
 				result.add(pd.getName());

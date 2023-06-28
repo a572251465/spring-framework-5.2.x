@@ -437,11 +437,15 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	
 	@Override
 	public boolean containsBean(String name) {
+		// 此方法是转换名称后的方法
 		String beanName = transformedBeanName(name);
+		// 包含单例 或是 包含beanDefinition
+		// 在一级缓存中寻找 或是 在beanDefinitionMap中寻找
 		if (containsSingleton(beanName) || containsBeanDefinition(beanName)) {
 			return (!BeanFactoryUtils.isFactoryDereference(name) || isFactoryBean(name));
 		}
 		// Not found -> check parent.
+		// 如果找不到的话 开始回访父类
 		BeanFactory parentBeanFactory = getParentBeanFactory();
 		return (parentBeanFactory != null && parentBeanFactory.containsBean(originalBeanName(name)));
 	}
