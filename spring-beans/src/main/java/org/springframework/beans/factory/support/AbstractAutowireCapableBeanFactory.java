@@ -1553,23 +1553,31 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	protected void autowireByType(
 			String beanName, AbstractBeanDefinition mbd, BeanWrapper bw, MutablePropertyValues pvs) {
 		
+		// 表示获取自定义转换器
 		TypeConverter converter = getCustomTypeConverter();
 		if (converter == null) {
+			// bw 中定义了默认的转换器
 			converter = bw;
 		}
 		
 		Set<String> autowiredBeanNames = new LinkedHashSet<>(4);
+		// 此方法是寻找能注入的字段（寻找的策略跟byName是保持一致的）
 		String[] propertyNames = unsatisfiedNonSimpleProperties(mbd, bw);
+		// 开始遍历拿到的所有的字段
 		for (String propertyName : propertyNames) {
 			try {
+				// 获取属性描述符  归属于哪个类，读方法是哪个，写方法是哪个
 				PropertyDescriptor pd = bw.getPropertyDescriptor(propertyName);
 				// Don't try autowiring by type for type Object: never makes sense,
 				// even if it technically is a unsatisfied, non-simple property.
+				// 如果不是Object类型的话，就可以进行自动注入
 				if (Object.class != pd.getPropertyType()) {
 					MethodParameter methodParam = BeanUtils.getWriteMethodParameter(pd);
 					// Do not allow eager init for type matching in case of a prioritized post-processor.
 					boolean eager = !(bw.getWrappedInstance() instanceof PriorityOrdered);
 					DependencyDescriptor desc = new AutowireByTypeDependencyDescriptor(methodParam, eager);
+					
+					// 此方法开始解析列表中的bean
 					Object autowiredArgument = resolveDependency(desc, beanName, autowiredBeanNames, converter);
 					if (autowiredArgument != null) {
 						pvs.add(propertyName, autowiredArgument);
