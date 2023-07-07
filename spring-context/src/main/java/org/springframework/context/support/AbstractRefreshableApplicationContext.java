@@ -136,6 +136,7 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 			DefaultListableBeanFactory beanFactory = createBeanFactory();
 			// 表示容器id
 			beanFactory.setSerializationId(getId());
+			//设置BeanDefinition是否覆盖 以及 是否允许循环依赖
 			customizeBeanFactory(beanFactory);
 			// 加载BeanDefinition 将xml中的bean 解析为 BeanDefinition
 			loadBeanDefinitions(beanFactory);
@@ -225,9 +226,11 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	 */
 	protected void customizeBeanFactory(DefaultListableBeanFactory beanFactory) {
 		if (this.allowBeanDefinitionOverriding != null) {
+			// 判断 BeanDefinition 是否允许覆盖
 			beanFactory.setAllowBeanDefinitionOverriding(this.allowBeanDefinitionOverriding);
 		}
 		if (this.allowCircularReferences != null) {
+			// 判断是否允许循环依赖
 			beanFactory.setAllowCircularReferences(this.allowCircularReferences);
 		}
 	}

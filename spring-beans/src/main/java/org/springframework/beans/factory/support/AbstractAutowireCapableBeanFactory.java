@@ -610,8 +610,15 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				logger.trace("Eagerly caching bean '" + beanName +
 						"' to allow for resolving potential circular references");
 			}
+			
+			// 给三级缓存中添加Bean 工厂
 			// 添加单例工厂
+			// todo
 			addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
+			
+			// 只保留二级缓存，不向三级缓存中存放对象
+//			earlySingletonObjects.put(beanName, bean);
+//			registeredSingletons.add(beanName);
 		}
 		
 		// Initialize the bean instance.
