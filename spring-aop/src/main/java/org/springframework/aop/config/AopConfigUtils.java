@@ -58,8 +58,11 @@ public abstract class AopConfigUtils {
 
 	static {
 		// Set up the escalation list...
+		// 表示不同实现方案的代理类的优先级，优先级越高，越先被注册
 		APC_PRIORITY_LIST.add(InfrastructureAdvisorAutoProxyCreator.class);
+		// 此为通过xml 配置 aop 的代理创建器，优先级其次
 		APC_PRIORITY_LIST.add(AspectJAwareAdvisorAutoProxyCreator.class);
+		// 此为注解类的 AOP 代理创建器，优先级最高
 		APC_PRIORITY_LIST.add(AnnotationAwareAspectJAutoProxyCreator.class);
 	}
 
@@ -114,6 +117,8 @@ public abstract class AopConfigUtils {
 		}
 	}
 
+	// todo aop
+	// 将【org.springframework.aop.aspectj.autoproxy.AspectJAwareAdvisorAutoProxyCreator】 注册到BeanDefintionMaps中
 	@Nullable
 	private static BeanDefinition registerOrEscalateApcAsRequired(
 			Class<?> cls, BeanDefinitionRegistry registry, @Nullable Object source) {
