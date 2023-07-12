@@ -111,11 +111,15 @@ public class InjectionMetadata {
 	}
 
 	public void inject(Object target, @Nullable String beanName, @Nullable PropertyValues pvs) throws Throwable {
+		// 此时的checkedElements 就是测实例（TestController）中待注入的属性
 		Collection<InjectedElement> checkedElements = this.checkedElements;
 		Collection<InjectedElement> elementsToIterate =
 				(checkedElements != null ? checkedElements : this.injectedElements);
 		if (!elementsToIterate.isEmpty()) {
 			for (InjectedElement element : elementsToIterate) {
+				// target 就是元对象 此处是TestController
+				// beanName 就是元对象的名称
+				// pvs 就是元对象的属性
 				element.inject(target, beanName, pvs);
 			}
 		}

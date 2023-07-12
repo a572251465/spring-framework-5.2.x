@@ -1318,8 +1318,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			
 			// 此时表示返回多个结果
 			if (matchingBeans.size() > 1) {
-				// 自动注入的bean名称
+				// 此方法中确定了最终的候选者
 				autowiredBeanName = determineAutowireCandidate(matchingBeans, descriptor);
+				// 如果没有找到最终的候选者 会进行异常抛出
 				if (autowiredBeanName == null) {
 					if (isRequired(descriptor) || !indicatesMultipleBeans(type)) {
 						return descriptor.resolveNotUnique(descriptor.getResolvableType(), matchingBeans);
@@ -1342,6 +1343,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				autowiredBeanNames.add(autowiredBeanName);
 			}
 			if (instanceCandidate instanceof Class) {
+				// 直接通过getBean 获取值
 				instanceCandidate = descriptor.resolveCandidate(autowiredBeanName, type, this);
 			}
 			Object result = instanceCandidate;
@@ -1583,11 +1585,13 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	@Nullable
 	protected String determineAutowireCandidate(Map<String, Object> candidates, DependencyDescriptor descriptor) {
 		Class<?> requiredType = descriptor.getDependencyType();
-		// 表示用来筛选主要的候选者
+		// 表示用来筛选主要的候选者  被注解primary 修饰
 		String primaryCandidate = determinePrimaryCandidate(candidates, requiredType);
 		if (primaryCandidate != null) {
 			return primaryCandidate;
 		}
+		
+		// 实现优先级接口的候选者 拿到最高优先级的候选者
 		String priorityCandidate = determineHighestPriorityCandidate(candidates, requiredType);
 		if (priorityCandidate != null) {
 			return priorityCandidate;
@@ -1596,6 +1600,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		for (Map.Entry<String, Object> entry : candidates.entrySet()) {
 			String candidateName = entry.getKey();
 			Object beanInstance = entry.getValue();
+			// 此方法的主要核心是 匹配beanName
 			if ((beanInstance != null && this.resolvableDependencies.containsValue(beanInstance)) ||
 					matchesBeanName(candidateName, descriptor.getDependencyName())) {
 				return candidateName;

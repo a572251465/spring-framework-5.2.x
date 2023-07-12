@@ -1,7 +1,9 @@
 package plus.chendd.testAop;
 
+import org.aspectj.lang.JoinPoint;
+
 public class AspectBean {
-	public void before() {
+	public void before(JoinPoint joinPoint) {
 		System.out.println("AspectBean.before");
 	}
 	
