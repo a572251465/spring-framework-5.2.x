@@ -21,7 +21,7 @@ public class TestAop {
 		Field field = System.class.getDeclaredField("props");
 		field.setAccessible(true);
 		Properties props = (Properties) field.get(null);
-		System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, dir);//dir为保存文件路径
+		System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, dir);
 		props.put("net.sf.cglib.core.DebuggingClassWriter.traceEnabled", "true");
 	}
 }
