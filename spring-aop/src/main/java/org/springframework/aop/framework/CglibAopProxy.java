@@ -83,7 +83,7 @@ import org.springframework.util.ReflectionUtils;
  */
 @SuppressWarnings("serial")
 class CglibAopProxy implements AopProxy, Serializable {
-
+	
 	// Constants for CGLIB callback array indices
 	private static final int AOP_PROXY = 0;
 	private static final int INVOKE_TARGET = 1;
@@ -92,37 +92,46 @@ class CglibAopProxy implements AopProxy, Serializable {
 	private static final int DISPATCH_ADVISED = 4;
 	private static final int INVOKE_EQUALS = 5;
 	private static final int INVOKE_HASHCODE = 6;
-
-
-	/** Logger available to subclasses; static to optimize serialization. */
+	
+	
+	/**
+	 * Logger available to subclasses; static to optimize serialization.
+	 */
 	protected static final Log logger = LogFactory.getLog(CglibAopProxy.class);
-
-	/** Keeps track of the Classes that we have validated for final methods. */
+	
+	/**
+	 * Keeps track of the Classes that we have validated for final methods.
+	 */
 	private static final Map<Class<?>, Boolean> validatedClasses = new WeakHashMap<>();
-
-
-	/** The configuration used to configure this proxy. */
+	
+	
+	/**
+	 * The configuration used to configure this proxy.
+	 */
 	protected final AdvisedSupport advised;
-
+	
 	@Nullable
 	protected Object[] constructorArgs;
-
+	
 	@Nullable
 	protected Class<?>[] constructorArgTypes;
-
-	/** Dispatcher used for methods on Advised. */
+	
+	/**
+	 * Dispatcher used for methods on Advised.
+	 */
 	private final transient AdvisedDispatcher advisedDispatcher;
-
+	
 	private transient Map<Method, Integer> fixedInterceptorMap = Collections.emptyMap();
-
+	
 	private transient int fixedInterceptorOffset;
-
-
+	
+	
 	/**
 	 * Create a new CglibAopProxy for the given AOP configuration.
+	 *
 	 * @param config the AOP configuration as AdvisedSupport object
 	 * @throws AopConfigException if the config is invalid. We try to throw an informative
-	 * exception in this case, rather than let a mysterious failure happen later.
+	 *                            exception in this case, rather than let a mysterious failure happen later.
 	 */
 	public CglibAopProxy(AdvisedSupport config) throws AopConfigException {
 		Assert.notNull(config, "AdvisedSupport must not be null");
@@ -132,10 +141,11 @@ class CglibAopProxy implements AopProxy, Serializable {
 		this.advised = config;
 		this.advisedDispatcher = new AdvisedDispatcher(this.advised);
 	}
-
+	
 	/**
 	 * Set constructor arguments to use for creating the proxy.
-	 * @param constructorArgs the constructor argument values
+	 *
+	 * @param constructorArgs     the constructor argument values
 	 * @param constructorArgTypes the constructor argument types
 	 */
 	public void setConstructorArguments(@Nullable Object[] constructorArgs, @Nullable Class<?>[] constructorArgTypes) {
@@ -149,24 +159,27 @@ class CglibAopProxy implements AopProxy, Serializable {
 		this.constructorArgs = constructorArgs;
 		this.constructorArgTypes = constructorArgTypes;
 	}
-
-
+	
+	
 	@Override
 	public Object getProxy() {
 		return getProxy(null);
 	}
-
+	
+	// 此方法就是cglib生成代理对象的方法
 	@Override
 	public Object getProxy(@Nullable ClassLoader classLoader) {
 		if (logger.isTraceEnabled()) {
 			logger.trace("Creating CGLIB proxy: " + this.advised.getTargetSource());
 		}
-
+		
 		try {
+			// advised 这个是ProxyFactory
 			Class<?> rootClass = this.advised.getTargetClass();
 			Assert.state(rootClass != null, "Target class must be available for creating a CGLIB proxy");
-
+			
 			Class<?> proxySuperClass = rootClass;
+			// 本身就是代理对象
 			if (rootClass.getName().contains(ClassUtils.CGLIB_CLASS_SEPARATOR)) {
 				proxySuperClass = rootClass.getSuperclass();
 				Class<?>[] additionalInterfaces = rootClass.getInterfaces();
@@ -174,24 +187,28 @@ class CglibAopProxy implements AopProxy, Serializable {
 					this.advised.addInterface(additionalInterface);
 				}
 			}
-
+			
 			// Validate the class, writing log messages as necessary.
 			validateClassIfNecessary(proxySuperClass, classLoader);
-
+			
 			// Configure CGLIB Enhancer...
+			// 开始创建Enhancer
 			Enhancer enhancer = createEnhancer();
 			if (classLoader != null) {
+				// 设置classLoader
 				enhancer.setClassLoader(classLoader);
 				if (classLoader instanceof SmartClassLoader &&
 						((SmartClassLoader) classLoader).isClassReloadable(proxySuperClass)) {
 					enhancer.setUseCache(false);
 				}
 			}
+			// 设置父类  其实就是当前的类，生成的类会是当前类的子类
 			enhancer.setSuperclass(proxySuperClass);
 			enhancer.setInterfaces(AopProxyUtils.completeProxiedInterfaces(this.advised));
 			enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
 			enhancer.setStrategy(new ClassLoaderAwareGeneratorStrategy(classLoader));
-
+			
+			// 拿到callback
 			Callback[] callbacks = getCallbacks(rootClass);
 			Class<?>[] types = new Class<?>[callbacks.length];
 			for (int x = 0; x < types.length; x++) {
@@ -201,21 +218,19 @@ class CglibAopProxy implements AopProxy, Serializable {
 			enhancer.setCallbackFilter(new ProxyCallbackFilter(
 					this.advised.getConfigurationOnlyCopy(), this.fixedInterceptorMap, this.fixedInterceptorOffset));
 			enhancer.setCallbackTypes(types);
-
+			
 			// Generate the proxy class and create a proxy instance.
 			return createProxyClassAndInstance(enhancer, callbacks);
-		}
-		catch (CodeGenerationException | IllegalArgumentException ex) {
+		} catch (CodeGenerationException | IllegalArgumentException ex) {
 			throw new AopConfigException("Could not generate CGLIB subclass of " + this.advised.getTargetClass() +
 					": Common causes of this problem include using a final class or a non-visible class",
 					ex);
-		}
-		catch (Throwable ex) {
+		} catch (Throwable ex) {
 			// TargetSource.getTarget() failed
 			throw new AopConfigException("Unexpected AOP exception", ex);
 		}
 	}
-
+	
 	protected Object createProxyClassAndInstance(Enhancer enhancer, Callback[] callbacks) {
 		enhancer.setInterceptDuringConstruction(false);
 		enhancer.setCallbacks(callbacks);
@@ -223,7 +238,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 				enhancer.create(this.constructorArgTypes, this.constructorArgs) :
 				enhancer.create());
 	}
-
+	
 	/**
 	 * Creates the CGLIB {@link Enhancer}. Subclasses may wish to override this to return a custom
 	 * {@link Enhancer} implementation.
@@ -231,7 +246,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 	protected Enhancer createEnhancer() {
 		return new Enhancer();
 	}
-
+	
 	/**
 	 * Checks to see whether the supplied {@code Class} has already been validated and
 	 * validates it if not.
@@ -247,7 +262,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 			}
 		}
 	}
-
+	
 	/**
 	 * Checks for final methods on the given {@code Class}, as well as package-visible
 	 * methods across ClassLoaders, and writes warnings to the log for each one found.
@@ -268,8 +283,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 									"Calls to this method will NOT be routed to the target instance and " +
 									"might lead to NPEs against uninitialized fields in the proxy instance.");
 						}
-					}
-					else if (logger.isDebugEnabled() && !Modifier.isPublic(mod) && !Modifier.isProtected(mod) &&
+					} else if (logger.isDebugEnabled() && !Modifier.isPublic(mod) && !Modifier.isProtected(mod) &&
 							proxyClassLoader != null && proxySuperClass.getClassLoader() != proxyClassLoader) {
 						logger.debug("Method [" + method + "] is package-visible across different ClassLoaders " +
 								"and cannot get proxied via CGLIB: Declare this method as public or protected " +
@@ -280,16 +294,16 @@ class CglibAopProxy implements AopProxy, Serializable {
 			doValidateClass(proxySuperClass.getSuperclass(), proxyClassLoader, ifcs);
 		}
 	}
-
+	
 	private Callback[] getCallbacks(Class<?> rootClass) throws Exception {
 		// Parameters used for optimization choices...
 		boolean exposeProxy = this.advised.isExposeProxy();
 		boolean isFrozen = this.advised.isFrozen();
 		boolean isStatic = this.advised.getTargetSource().isStatic();
-
+		
 		// Choose an "aop" interceptor (used for AOP calls).
 		Callback aopInterceptor = new DynamicAdvisedInterceptor(this.advised);
-
+		
 		// Choose a "straight to target" interceptor. (used for calls that are
 		// unadvised but can return this). May be required to expose the proxy.
 		Callback targetInterceptor;
@@ -297,19 +311,18 @@ class CglibAopProxy implements AopProxy, Serializable {
 			targetInterceptor = (isStatic ?
 					new StaticUnadvisedExposedInterceptor(this.advised.getTargetSource().getTarget()) :
 					new DynamicUnadvisedExposedInterceptor(this.advised.getTargetSource()));
-		}
-		else {
+		} else {
 			targetInterceptor = (isStatic ?
 					new StaticUnadvisedInterceptor(this.advised.getTargetSource().getTarget()) :
 					new DynamicUnadvisedInterceptor(this.advised.getTargetSource()));
 		}
-
+		
 		// Choose a "direct to target" dispatcher (used for
 		// unadvised calls to static targets that cannot return this).
 		Callback targetDispatcher = (isStatic ?
 				new StaticDispatcher(this.advised.getTargetSource().getTarget()) : new SerializableNoOp());
-
-		Callback[] mainCallbacks = new Callback[] {
+		
+		Callback[] mainCallbacks = new Callback[]{
 				aopInterceptor,  // for normal advice
 				targetInterceptor,  // invoke target without considering advice, if optimized
 				new SerializableNoOp(),  // no override for methods mapped to this
@@ -317,9 +330,9 @@ class CglibAopProxy implements AopProxy, Serializable {
 				new EqualsInterceptor(this.advised),
 				new HashCodeInterceptor(this.advised)
 		};
-
+		
 		Callback[] callbacks;
-
+		
 		// If the target is a static one and the advice chain is frozen,
 		// then we can make some optimizations by sending the AOP calls
 		// direct to the target using the fixed chain for that method.
@@ -327,7 +340,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 			Method[] methods = rootClass.getMethods();
 			Callback[] fixedCallbacks = new Callback[methods.length];
 			this.fixedInterceptorMap = new HashMap<>(methods.length);
-
+			
 			// TODO: small memory optimization here (can skip creation for methods with no advice)
 			for (int x = 0; x < methods.length; x++) {
 				Method method = methods[x];
@@ -336,33 +349,32 @@ class CglibAopProxy implements AopProxy, Serializable {
 						chain, this.advised.getTargetSource().getTarget(), this.advised.getTargetClass());
 				this.fixedInterceptorMap.put(method, x);
 			}
-
+			
 			// Now copy both the callbacks from mainCallbacks
 			// and fixedCallbacks into the callbacks array.
 			callbacks = new Callback[mainCallbacks.length + fixedCallbacks.length];
 			System.arraycopy(mainCallbacks, 0, callbacks, 0, mainCallbacks.length);
 			System.arraycopy(fixedCallbacks, 0, callbacks, mainCallbacks.length, fixedCallbacks.length);
 			this.fixedInterceptorOffset = mainCallbacks.length;
-		}
-		else {
+		} else {
 			callbacks = mainCallbacks;
 		}
 		return callbacks;
 	}
-
-
+	
+	
 	@Override
 	public boolean equals(@Nullable Object other) {
 		return (this == other || (other instanceof CglibAopProxy &&
 				AopProxyUtils.equalsInProxy(this.advised, ((CglibAopProxy) other).advised)));
 	}
-
+	
 	@Override
 	public int hashCode() {
 		return CglibAopProxy.class.hashCode() * 13 + this.advised.getTargetSource().hashCode();
 	}
-
-
+	
+	
 	/**
 	 * Check whether the given method is declared on any of the given interfaces.
 	 */
@@ -374,7 +386,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 		}
 		return false;
 	}
-
+	
 	/**
 	 * Invoke the given method with a CGLIB MethodProxy if possible, falling back
 	 * to a plain reflection invocation in case of a fast-class generation failure.
@@ -384,13 +396,12 @@ class CglibAopProxy implements AopProxy, Serializable {
 			throws Throwable {
 		try {
 			return methodProxy.invoke(target, args);
-		}
-		catch (CodeGenerationException ex) {
+		} catch (CodeGenerationException ex) {
 			CglibMethodInvocation.logFastClassGenerationFailure(method);
 			return AopUtils.invokeJoinpointUsingReflection(target, method, args);
 		}
 	}
-
+	
 	/**
 	 * Process a return value. Wraps a return of {@code this} if necessary to be the
 	 * {@code proxy} and also verifies that {@code null} is not returned as a primitive.
@@ -398,7 +409,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 	@Nullable
 	private static Object processReturnType(
 			Object proxy, @Nullable Object target, Method method, @Nullable Object returnValue) {
-
+		
 		// Massage return value if necessary
 		if (returnValue != null && returnValue == target &&
 				!RawTargetAccess.class.isAssignableFrom(method.getDeclaringClass())) {
@@ -413,16 +424,16 @@ class CglibAopProxy implements AopProxy, Serializable {
 		}
 		return returnValue;
 	}
-
-
+	
+	
 	/**
 	 * Serializable replacement for CGLIB's NoOp interface.
 	 * Public to allow use elsewhere in the framework.
 	 */
 	public static class SerializableNoOp implements NoOp, Serializable {
 	}
-
-
+	
+	
 	/**
 	 * Method interceptor used for static targets with no advice chain. The call
 	 * is passed directly back to the target. Used when the proxy needs to be
@@ -430,14 +441,14 @@ class CglibAopProxy implements AopProxy, Serializable {
 	 * {@code this}.
 	 */
 	private static class StaticUnadvisedInterceptor implements MethodInterceptor, Serializable {
-
+		
 		@Nullable
 		private final Object target;
-
+		
 		public StaticUnadvisedInterceptor(@Nullable Object target) {
 			this.target = target;
 		}
-
+		
 		@Override
 		@Nullable
 		public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
@@ -445,21 +456,21 @@ class CglibAopProxy implements AopProxy, Serializable {
 			return processReturnType(proxy, this.target, method, retVal);
 		}
 	}
-
-
+	
+	
 	/**
 	 * Method interceptor used for static targets with no advice chain, when the
 	 * proxy is to be exposed.
 	 */
 	private static class StaticUnadvisedExposedInterceptor implements MethodInterceptor, Serializable {
-
+		
 		@Nullable
 		private final Object target;
-
+		
 		public StaticUnadvisedExposedInterceptor(@Nullable Object target) {
 			this.target = target;
 		}
-
+		
 		@Override
 		@Nullable
 		public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
@@ -468,27 +479,26 @@ class CglibAopProxy implements AopProxy, Serializable {
 				oldProxy = AopContext.setCurrentProxy(proxy);
 				Object retVal = invokeMethod(this.target, method, args, methodProxy);
 				return processReturnType(proxy, this.target, method, retVal);
-			}
-			finally {
+			} finally {
 				AopContext.setCurrentProxy(oldProxy);
 			}
 		}
 	}
-
-
+	
+	
 	/**
 	 * Interceptor used to invoke a dynamic target without creating a method
 	 * invocation or evaluating an advice chain. (We know there was no advice
 	 * for this method.)
 	 */
 	private static class DynamicUnadvisedInterceptor implements MethodInterceptor, Serializable {
-
+		
 		private final TargetSource targetSource;
-
+		
 		public DynamicUnadvisedInterceptor(TargetSource targetSource) {
 			this.targetSource = targetSource;
 		}
-
+		
 		@Override
 		@Nullable
 		public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
@@ -496,27 +506,26 @@ class CglibAopProxy implements AopProxy, Serializable {
 			try {
 				Object retVal = invokeMethod(target, method, args, methodProxy);
 				return processReturnType(proxy, target, method, retVal);
-			}
-			finally {
+			} finally {
 				if (target != null) {
 					this.targetSource.releaseTarget(target);
 				}
 			}
 		}
 	}
-
-
+	
+	
 	/**
 	 * Interceptor for unadvised dynamic targets when the proxy needs exposing.
 	 */
 	private static class DynamicUnadvisedExposedInterceptor implements MethodInterceptor, Serializable {
-
+		
 		private final TargetSource targetSource;
-
+		
 		public DynamicUnadvisedExposedInterceptor(TargetSource targetSource) {
 			this.targetSource = targetSource;
 		}
-
+		
 		@Override
 		@Nullable
 		public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
@@ -526,8 +535,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 				oldProxy = AopContext.setCurrentProxy(proxy);
 				Object retVal = invokeMethod(target, method, args, methodProxy);
 				return processReturnType(proxy, target, method, retVal);
-			}
-			finally {
+			} finally {
 				AopContext.setCurrentProxy(oldProxy);
 				if (target != null) {
 					this.targetSource.releaseTarget(target);
@@ -535,60 +543,60 @@ class CglibAopProxy implements AopProxy, Serializable {
 			}
 		}
 	}
-
-
+	
+	
 	/**
 	 * Dispatcher for a static target. Dispatcher is much faster than
 	 * interceptor. This will be used whenever it can be determined that a
 	 * method definitely does not return "this"
 	 */
 	private static class StaticDispatcher implements Dispatcher, Serializable {
-
+		
 		@Nullable
 		private final Object target;
-
+		
 		public StaticDispatcher(@Nullable Object target) {
 			this.target = target;
 		}
-
+		
 		@Override
 		@Nullable
 		public Object loadObject() {
 			return this.target;
 		}
 	}
-
-
+	
+	
 	/**
 	 * Dispatcher for any methods declared on the Advised class.
 	 */
 	private static class AdvisedDispatcher implements Dispatcher, Serializable {
-
+		
 		private final AdvisedSupport advised;
-
+		
 		public AdvisedDispatcher(AdvisedSupport advised) {
 			this.advised = advised;
 		}
-
+		
 		@Override
 		public Object loadObject() {
 			return this.advised;
 		}
 	}
-
-
+	
+	
 	/**
 	 * Dispatcher for the {@code equals} method.
 	 * Ensures that the method call is always handled by this class.
 	 */
 	private static class EqualsInterceptor implements MethodInterceptor, Serializable {
-
+		
 		private final AdvisedSupport advised;
-
+		
 		public EqualsInterceptor(AdvisedSupport advised) {
 			this.advised = advised;
 		}
-
+		
 		@Override
 		public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) {
 			Object other = args[0];
@@ -602,54 +610,53 @@ class CglibAopProxy implements AopProxy, Serializable {
 				}
 				AdvisedSupport otherAdvised = ((EqualsInterceptor) callback).advised;
 				return AopProxyUtils.equalsInProxy(this.advised, otherAdvised);
-			}
-			else {
+			} else {
 				return false;
 			}
 		}
 	}
-
-
+	
+	
 	/**
 	 * Dispatcher for the {@code hashCode} method.
 	 * Ensures that the method call is always handled by this class.
 	 */
 	private static class HashCodeInterceptor implements MethodInterceptor, Serializable {
-
+		
 		private final AdvisedSupport advised;
-
+		
 		public HashCodeInterceptor(AdvisedSupport advised) {
 			this.advised = advised;
 		}
-
+		
 		@Override
 		public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) {
 			return CglibAopProxy.class.hashCode() * 13 + this.advised.getTargetSource().hashCode();
 		}
 	}
-
-
+	
+	
 	/**
 	 * Interceptor used specifically for advised methods on a frozen, static proxy.
 	 */
 	private static class FixedChainStaticTargetInterceptor implements MethodInterceptor, Serializable {
-
+		
 		private final List<Object> adviceChain;
-
+		
 		@Nullable
 		private final Object target;
-
+		
 		@Nullable
 		private final Class<?> targetClass;
-
+		
 		public FixedChainStaticTargetInterceptor(
 				List<Object> adviceChain, @Nullable Object target, @Nullable Class<?> targetClass) {
-
+			
 			this.adviceChain = adviceChain;
 			this.target = target;
 			this.targetClass = targetClass;
 		}
-
+		
 		@Override
 		@Nullable
 		public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
@@ -661,26 +668,28 @@ class CglibAopProxy implements AopProxy, Serializable {
 			return retVal;
 		}
 	}
-
-
+	
+	
 	/**
 	 * General purpose AOP callback. Used when the target is dynamic or when the
 	 * proxy is not frozen.
 	 */
 	private static class DynamicAdvisedInterceptor implements MethodInterceptor, Serializable {
-
+		
 		private final AdvisedSupport advised;
-
+		
 		public DynamicAdvisedInterceptor(AdvisedSupport advised) {
 			this.advised = advised;
 		}
-
+		
+		// 此方法就是cglib 依赖的核心方法  intercept
 		@Override
 		@Nullable
 		public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
 			Object oldProxy = null;
 			boolean setProxyContext = false;
 			Object target = null;
+			// 表示原对象
 			TargetSource targetSource = this.advised.getTargetSource();
 			try {
 				if (this.advised.exposeProxy) {
@@ -691,6 +700,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 				// Get as late as possible to minimize the time we "own" the target, in case it comes from a pool...
 				target = targetSource.getTarget();
 				Class<?> targetClass = (target != null ? target.getClass() : null);
+				// 拿到intercept 拦截器链
 				List<Object> chain = this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass);
 				Object retVal;
 				// Check whether we only have one InvokerInterceptor: that is,
@@ -702,15 +712,13 @@ class CglibAopProxy implements AopProxy, Serializable {
 					// swapping or fancy proxying.
 					Object[] argsToUse = AopProxyUtils.adaptArgumentsIfNecessary(method, args);
 					retVal = invokeMethod(target, method, argsToUse, methodProxy);
-				}
-				else {
+				} else {
 					// We need to create a method invocation...
 					retVal = new CglibMethodInvocation(proxy, target, method, args, targetClass, chain, methodProxy).proceed();
 				}
 				retVal = processReturnType(proxy, target, method, retVal);
 				return retVal;
-			}
-			finally {
+			} finally {
 				if (target != null && !targetSource.isStatic()) {
 					targetSource.releaseTarget(target);
 				}
@@ -720,14 +728,14 @@ class CglibAopProxy implements AopProxy, Serializable {
 				}
 			}
 		}
-
+		
 		@Override
 		public boolean equals(@Nullable Object other) {
 			return (this == other ||
 					(other instanceof DynamicAdvisedInterceptor &&
 							this.advised.equals(((DynamicAdvisedInterceptor) other).advised)));
 		}
-
+		
 		/**
 		 * CGLIB uses this to drive proxy creation.
 		 */
@@ -736,44 +744,41 @@ class CglibAopProxy implements AopProxy, Serializable {
 			return this.advised.hashCode();
 		}
 	}
-
-
+	
+	
 	/**
 	 * Implementation of AOP Alliance MethodInvocation used by this AOP proxy.
 	 */
 	private static class CglibMethodInvocation extends ReflectiveMethodInvocation {
-
+		
 		@Nullable
 		private final MethodProxy methodProxy;
-
+		
 		public CglibMethodInvocation(Object proxy, @Nullable Object target, Method method,
-				Object[] arguments, @Nullable Class<?> targetClass,
-				List<Object> interceptorsAndDynamicMethodMatchers, MethodProxy methodProxy) {
-
+									 Object[] arguments, @Nullable Class<?> targetClass,
+									 List<Object> interceptorsAndDynamicMethodMatchers, MethodProxy methodProxy) {
+			
 			super(proxy, target, method, arguments, targetClass, interceptorsAndDynamicMethodMatchers);
-
+			
 			// Only use method proxy for public methods not derived from java.lang.Object
 			this.methodProxy = (isMethodProxyCompatible(method) ? methodProxy : null);
 		}
-
+		
 		@Override
 		@Nullable
 		public Object proceed() throws Throwable {
 			try {
 				return super.proceed();
-			}
-			catch (RuntimeException ex) {
+			} catch (RuntimeException ex) {
 				throw ex;
-			}
-			catch (Exception ex) {
+			} catch (Exception ex) {
 				if (ReflectionUtils.declaresException(getMethod(), ex.getClass()) ||
 						KotlinDetector.isKotlinType(getMethod().getDeclaringClass())) {
 					// Propagate original exception if declared on the target method
 					// (with callers expecting it). Always propagate it for Kotlin code
 					// since checked exceptions do not have to be explicitly declared there.
 					throw ex;
-				}
-				else {
+				} else {
 					// Checked exception thrown in the interceptor but not declared on the
 					// target method signature -> apply an UndeclaredThrowableException,
 					// aligned with standard JDK dynamic proxy behavior.
@@ -781,7 +786,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 				}
 			}
 		}
-
+		
 		/**
 		 * Gives a marginal performance improvement versus using reflection to
 		 * invoke the target when invoking public methods.
@@ -791,47 +796,46 @@ class CglibAopProxy implements AopProxy, Serializable {
 			if (this.methodProxy != null) {
 				try {
 					return this.methodProxy.invoke(this.target, this.arguments);
-				}
-				catch (CodeGenerationException ex) {
+				} catch (CodeGenerationException ex) {
 					logFastClassGenerationFailure(this.method);
 				}
 			}
 			return super.invokeJoinpoint();
 		}
-
+		
 		static boolean isMethodProxyCompatible(Method method) {
 			return (Modifier.isPublic(method.getModifiers()) &&
 					method.getDeclaringClass() != Object.class && !AopUtils.isEqualsMethod(method) &&
 					!AopUtils.isHashCodeMethod(method) && !AopUtils.isToStringMethod(method));
 		}
-
+		
 		static void logFastClassGenerationFailure(Method method) {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Failed to generate CGLIB fast class for method: " + method);
 			}
 		}
 	}
-
-
+	
+	
 	/**
 	 * CallbackFilter to assign Callbacks to methods.
 	 */
 	private static class ProxyCallbackFilter implements CallbackFilter {
-
+		
 		private final AdvisedSupport advised;
-
+		
 		private final Map<Method, Integer> fixedInterceptorMap;
-
+		
 		private final int fixedInterceptorOffset;
-
+		
 		public ProxyCallbackFilter(
 				AdvisedSupport advised, Map<Method, Integer> fixedInterceptorMap, int fixedInterceptorOffset) {
-
+			
 			this.advised = advised;
 			this.fixedInterceptorMap = fixedInterceptorMap;
 			this.fixedInterceptorOffset = fixedInterceptorOffset;
 		}
-
+		
 		/**
 		 * Implementation of CallbackFilter.accept() to return the index of the
 		 * callback we need.
@@ -919,15 +923,13 @@ class CglibAopProxy implements AopProxy, Serializable {
 					// We know that we are optimizing so we can use the FixedStaticChainInterceptors.
 					int index = this.fixedInterceptorMap.get(method);
 					return (index + this.fixedInterceptorOffset);
-				}
-				else {
+				} else {
 					if (logger.isTraceEnabled()) {
 						logger.trace("Unable to apply any optimizations to advised method: " + method);
 					}
 					return AOP_PROXY;
 				}
-			}
-			else {
+			} else {
 				// See if the return type of the method is outside the class hierarchy of the target type.
 				// If so we know it never needs to have return type massage and can use a dispatcher.
 				// If the proxy is being exposed, then must use the interceptor the correct one is already
@@ -943,8 +945,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 								"may therefore return 'this' - using INVOKE_TARGET: " + method);
 					}
 					return INVOKE_TARGET;
-				}
-				else {
+				} else {
 					if (logger.isTraceEnabled()) {
 						logger.trace("Method return type ensures 'this' cannot be returned - " +
 								"using DISPATCH_TARGET: " + method);
@@ -953,7 +954,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 				}
 			}
 		}
-
+		
 		@Override
 		public boolean equals(@Nullable Object other) {
 			if (this == other) {
@@ -995,11 +996,11 @@ class CglibAopProxy implements AopProxy, Serializable {
 			}
 			return true;
 		}
-
+		
 		private static boolean equalsAdviceClasses(Advisor a, Advisor b) {
 			return (a.getAdvice().getClass() == b.getAdvice().getClass());
 		}
-
+		
 		private static boolean equalsPointcuts(Advisor a, Advisor b) {
 			// If only one of the advisor (but not both) is PointcutAdvisor, then it is a mismatch.
 			// Takes care of the situations where an IntroductionAdvisor is used (see SPR-3959).
@@ -1007,7 +1008,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 					(b instanceof PointcutAdvisor &&
 							ObjectUtils.nullSafeEquals(((PointcutAdvisor) a).getPointcut(), ((PointcutAdvisor) b).getPointcut())));
 		}
-
+		
 		@Override
 		public int hashCode() {
 			int hashCode = 0;
@@ -1023,5 +1024,5 @@ class CglibAopProxy implements AopProxy, Serializable {
 			return hashCode;
 		}
 	}
-
+	
 }
