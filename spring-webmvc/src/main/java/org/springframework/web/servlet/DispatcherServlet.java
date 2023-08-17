@@ -492,6 +492,7 @@ public class DispatcherServlet extends FrameworkServlet {
 	 */
 	@Override
 	protected void onRefresh(ApplicationContext context) {
+		// 执行spring mvc 初期化组件的策略
 		initStrategies(context);
 	}
 
@@ -500,9 +501,14 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * <p>May be overridden in subclasses in order to initialize further strategy objects.
 	 */
 	protected void initStrategies(ApplicationContext context) {
+		// 此方法表示 实例化 spring mvc的九大组件
+		// 表示文件上传的
 		initMultipartResolver(context);
+		// 国际化相关的
 		initLocaleResolver(context);
+		// 主题相关的
 		initThemeResolver(context);
+		// 映射 handler mapper的
 		initHandlerMappings(context);
 		initHandlerAdapters(context);
 		initHandlerExceptionResolvers(context);

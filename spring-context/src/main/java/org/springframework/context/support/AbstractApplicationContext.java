@@ -550,12 +550,15 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		return this.beanFactoryPostProcessors;
 	}
 	
+	// 此方法就是添加监听器的方法
 	@Override
 	public void addApplicationListener(ApplicationListener<?> listener) {
 		Assert.notNull(listener, "ApplicationListener must not be null");
 		if (this.applicationEventMulticaster != null) {
 			this.applicationEventMulticaster.addApplicationListener(listener);
 		}
+		
+		// 直接添加到set 集合中
 		this.applicationListeners.add(listener);
 	}
 	
@@ -1002,15 +1005,18 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void finishRefresh() {
 		// Clear context-level resource caches (such as ASM metadata from scanning).
+		// 此方法是清空资源的缓存
 		clearResourceCaches();
 		
 		// Initialize lifecycle processor for this context.
+		// 初期化生命周期
 		initLifecycleProcessor();
 		
 		// Propagate refresh to lifecycle processor first.
 		getLifecycleProcessor().onRefresh();
 		
 		// Publish the final event.
+		// 观察者模式 ~~ 发布
 		publishEvent(new ContextRefreshedEvent(this));
 		
 		// Participate in LiveBeansView MBean, if active.

@@ -520,13 +520,16 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 */
 	@Override
 	protected final void initServletBean() throws ServletException {
+		// 此方法就是为了打印log
 		getServletContext().log("Initializing Spring " + getClass().getSimpleName() + " '" + getServletName() + "'");
 		if (logger.isInfoEnabled()) {
 			logger.info("Initializing Servlet '" + getServletName() + "'");
 		}
+		// 记录开始的事件戳
 		long startTime = System.currentTimeMillis();
 
 		try {
+			// 初期化 initWebApplicationContext
 			this.webApplicationContext = initWebApplicationContext();
 			initFrameworkServlet();
 		}
@@ -558,10 +561,12 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 * @see #setContextConfigLocation
 	 */
 	protected WebApplicationContext initWebApplicationContext() {
+		// 拿到root的 WebApplicationContext
 		WebApplicationContext rootContext =
 				WebApplicationContextUtils.getWebApplicationContext(getServletContext());
 		WebApplicationContext wac = null;
 
+		// 此时webApplicationContext  一定是null的
 		if (this.webApplicationContext != null) {
 			// A context instance was injected at construction time -> use it
 			wac = this.webApplicationContext;
@@ -588,6 +593,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		}
 		if (wac == null) {
 			// No context instance is defined for this servlet -> create a local one
+			// 会执行这个逻辑方法 开始创建webApplicationContext
 			wac = createWebApplicationContext(rootContext);
 		}
 
@@ -649,6 +655,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 * @see org.springframework.web.context.support.XmlWebApplicationContext
 	 */
 	protected WebApplicationContext createWebApplicationContext(@Nullable ApplicationContext parent) {
+		// 拿到上下文的class
 		Class<?> contextClass = getContextClass();
 		if (!ConfigurableWebApplicationContext.class.isAssignableFrom(contextClass)) {
 			throw new ApplicationContextException(
@@ -656,21 +663,28 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 					"': custom WebApplicationContext class [" + contextClass.getName() +
 					"] is not of type ConfigurableWebApplicationContext");
 		}
+		// 将contextClass 进行包装
 		ConfigurableWebApplicationContext wac =
 				(ConfigurableWebApplicationContext) BeanUtils.instantiateClass(contextClass);
 
+		// 设置环境
 		wac.setEnvironment(getEnvironment());
+		// 设置父类
 		wac.setParent(parent);
+		// 从参数配置中拿到spring mvc需要的配置文件
 		String configLocation = getContextConfigLocation();
 		if (configLocation != null) {
+			// 设置configLocation 此方法可以解析字符串的
 			wac.setConfigLocation(configLocation);
 		}
+		// 配置 && 刷新 webApplicationContext
 		configureAndRefreshWebApplicationContext(wac);
 
 		return wac;
 	}
 
 	protected void configureAndRefreshWebApplicationContext(ConfigurableWebApplicationContext wac) {
+		// 判断context id 是否跟系统生成的id 保持一致
 		if (ObjectUtils.identityToString(wac).equals(wac.getId())) {
 			// The application context id is still set to its original default value
 			// -> assign a more useful id based on available information
@@ -684,9 +698,14 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			}
 		}
 
+		//  设置servletContext
 		wac.setServletContext(getServletContext());
+		// 设置servletConfig
 		wac.setServletConfig(getServletConfig());
+		// 设置命令空间
 		wac.setNamespace(getNamespace());
+		// 添加监听器
+		// SourceFilteringListener 表示资源拦截 监听器
 		wac.addApplicationListener(new SourceFilteringListener(wac, new ContextRefreshListener()));
 
 		// The wac environment's #initPropertySources will be called in any case when the context
@@ -697,8 +716,10 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			((ConfigurableWebEnvironment) env).initPropertySources(getServletContext(), getServletConfig());
 		}
 
+		// 空方法 为了让继承者来使用
 		postProcessWebApplicationContext(wac);
 		applyInitializers(wac);
+		// 调用refresh 核心方法
 		wac.refresh();
 	}
 
@@ -839,6 +860,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	public void onApplicationEvent(ContextRefreshedEvent event) {
 		this.refreshEventReceived = true;
 		synchronized (this.onRefreshMonitor) {
+			// 属于 spring mvc的刷新核心方法
 			onRefresh(event.getApplicationContext());
 		}
 	}

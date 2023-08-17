@@ -50,7 +50,9 @@ public class SourceFilteringListener implements GenericApplicationListener, Smar
 	 * from the specified source
 	 */
 	public SourceFilteringListener(Object source, ApplicationListener<?> delegate) {
+		// source 表示context
 		this.source = source;
+		// 如果不满足实现接口【GenericApplicationListener】 使用装饰器进行包装
 		this.delegate = (delegate instanceof GenericApplicationListener ?
 				(GenericApplicationListener) delegate : new GenericApplicationListenerAdapter(delegate));
 	}

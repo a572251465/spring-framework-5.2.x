@@ -4,6 +4,7 @@ package plus.chendd.aop.xml.service;
 public class MyCalculator /*implements Calculator */{
     public Integer add(Integer i, Integer j) throws NoSuchMethodException {
         Integer result = i+j;
+        System.out.println("add 方法执行了...");
         return result;
     }
 
