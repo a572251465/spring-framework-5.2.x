@@ -91,6 +91,8 @@ public interface MultipartResolver {
 	 * @param request the servlet request to be evaluated
 	 * @return whether the request contains multipart content
 	 */
+	
+	// 可以理解为是否是文件呗
 	boolean isMultipart(HttpServletRequest request);
 
 	/**
@@ -110,6 +112,8 @@ public interface MultipartResolver {
 	 * @see javax.servlet.http.HttpServletRequest#getParameterNames
 	 * @see javax.servlet.http.HttpServletRequest#getParameterMap
 	 */
+	
+	// 解析请求，将请求中的文件和参数封装到MultipartHttpServletRequest中
 	MultipartHttpServletRequest resolveMultipart(HttpServletRequest request) throws MultipartException;
 
 	/**

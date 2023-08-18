@@ -893,15 +893,20 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	/**
 	 * Override the parent class implementation in order to intercept PATCH requests.
 	 */
+	// 当发起请求的时候，  由tomact开始调用service
 	@Override
 	protected void service(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
+		// 解析开始获取 请求方法
 		HttpMethod httpMethod = HttpMethod.resolve(request.getMethod());
+		// 如果method为空的话  || method == patch的会单独做处理
 		if (httpMethod == HttpMethod.PATCH || httpMethod == null) {
 			processRequest(request, response);
 		}
 		else {
+			
+			// 调用父类的service方法
 			super.service(request, response);
 		}
 	}
@@ -913,10 +918,12 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 * @see #doService
 	 * @see #doHead
 	 */
+	// 表示get 请求
 	@Override
 	protected final void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
+		// 此方法为处理请求的共同的方法
 		processRequest(request, response);
 	}
 
@@ -924,6 +931,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 * Delegate POST requests to {@link #processRequest}.
 	 * @see #doService
 	 */
+	// post 请求
 	@Override
 	protected final void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1010,13 +1018,18 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	protected final void processRequest(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
+		// 记录开始时间
 		long startTime = System.currentTimeMillis();
 		Throwable failureCause = null;
 
+		// 拿到基于local线程的 context上下文的值
 		LocaleContext previousLocaleContext = LocaleContextHolder.getLocaleContext();
+		// 设置localeContext
 		LocaleContext localeContext = buildLocaleContext(request);
 
+		// 拿到属性值
 		RequestAttributes previousAttributes = RequestContextHolder.getRequestAttributes();
+		// 编译 设置属性 request/response
 		ServletRequestAttributes requestAttributes = buildRequestAttributes(request, response, previousAttributes);
 
 		WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
@@ -1025,6 +1038,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		initContextHolders(request, localeContext, requestAttributes);
 
 		try {
+			// 执行doService 的核心方法
 			doService(request, response);
 		}
 		catch (ServletException | IOException ex) {
@@ -1037,6 +1051,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		}
 
 		finally {
+			// 此方法是重置上下文
 			resetContextHolders(request, previousLocaleContext, previousAttributes);
 			if (requestAttributes != null) {
 				requestAttributes.requestCompleted();
